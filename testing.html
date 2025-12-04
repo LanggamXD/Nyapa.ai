@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nyapa.ai - Smart WhatsApp Bot Demo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom WhatsApp-like scrollbar & Utilities */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* WhatsApp default background color */
+      .bg-wa-beige {
+        background-color: #efeae2;
+        background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
+        background-repeat: repeat;
+        background-blend-mode: overlay;
+        background-size: 400px;
+      }
+
+      .bg-wa-teal {
+        background-color: #008069;
+      }
+      .bg-wa-dark-teal {
+        background-color: #005c4b;
+      }
+      .bg-wa-user-green {
+        background-color: #d9fdd3;
+      }
+
+      /* Animation for typing */
+      .dot-flashing {
+        position: relative;
+        width: 6px;
+        height: 6px;
+        border-radius: 5px;
+        background-color: #9ca3af;
+        color: #9ca3af;
+        animation: dot-flashing 1s infinite linear alternate;
+        animation-delay: 0.5s;
+      }
+      .dot-flashing::before,
+      .dot-flashing::after {
+        content: "";
+        display: inline-block;
+        position: absolute;
+        top: 0;
+      }
+      .dot-flashing::before {
+        left: -10px;
+        width: 6px;
+        height: 6px;
+        border-radius: 5px;
+        background-color: #9ca3af;
+        color: #9ca3af;
+        animation: dot-flashing 1s infinite alternate;
+        animation-delay: 0s;
+      }
+      .dot-flashing::after {
+        left: 10px;
+        width: 6px;
+        height: 6px;
+        border-radius: 5px;
+        background-color: #9ca3af;
+        color: #9ca3af;
+        animation: dot-flashing 1s infinite alternate;
+        animation-delay: 1s;
+      }
+      @keyframes dot-flashing {
+        0% {
+          background-color: #9ca3af;
+        }
+        50%,
+        100% {
+          background-color: #e5e7eb;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-100 h-screen flex items-center justify-center font-sans overflow-hidden"
+  >
+    <!-- Phone Frame -->
+    <div
+      class="relative w-full h-full md:w-[400px] md:h-[90vh] md:max-h-[850px] md:rounded-3xl md:shadow-2xl overflow-hidden flex flex-col bg-wa-beige transition-all duration-300"
+    >
+      <!-- Header -->
+      <div
+        class="bg-wa-teal p-3 flex items-center justify-between text-white z-20 shadow-sm"
+      >
+        <div class="flex items-center gap-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 cursor-pointer md:hidden"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+
+          <!-- Avatar & Logo -->
+          <div class="relative">
+            <div
+              class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-wa-teal font-bold text-lg overflow-hidden"
+            >
+              <!-- GANTI LOGO DISINI -->
+              <img
+                src="https://github.com/LanggamXD/Nyapa.ai/blob/main/yapa.AI_20251129_210519_0000.png?raw=true"
+                alt="Nyapa Logo"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div
+              class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-wa-teal"
+            ></div>
+          </div>
+
+          <!-- Info -->
+          <div class="flex flex-col">
+            <div class="flex items-center gap-1">
+              <h1 class="font-semibold text-lg leading-tight">Nyapa.ai Demo</h1>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 text-green-300"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <span class="text-xs text-gray-200 animate-pulse" id="status-text"
+              >Online</span
+            >
+          </div>
+        </div>
+
+        <!-- Admin Button -->
+        <button
+          onclick="toggleAdminModal()"
+          class="p-2 hover:bg-wa-dark-teal rounded-full transition relative group"
+        >
+          <span class="absolute top-0 right-0 flex h-3 w-3">
+            <span
+              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+            ></span>
+            <span
+              class="relative inline-flex rounded-full h-3 w-3 bg-red-500"
+            ></span>
+          </span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Chat Area -->
+      <div
+        id="chat-container"
+        class="flex-1 overflow-y-auto p-4 space-y-3 relative scroll-smooth"
+      >
+        <div class="flex justify-center mb-4">
+          <div
+            class="bg-[#ffeb3b] bg-opacity-40 text-[11px] text-gray-700 px-3 py-1 rounded-lg text-center shadow-sm backdrop-blur-sm"
+          >
+            🔒 Pesan terenkripsi secara end-to-end.
+          </div>
+        </div>
+
+        <!-- Welcome Message -->
+        <div class="flex justify-start">
+          <div
+            class="bg-white rounded-lg rounded-tl-none p-2.5 px-3 max-w-[85%] shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] relative"
+          >
+            <p class="text-[14.2px] leading-snug text-[#111b21]">
+              Halo Kak! 👋 Selamat datang di Sapa Sepatu Demo Store.<br />Ada yang
+              bisa dibantu hari ini?
+            </p>
+            <span
+              class="text-[11px] text-[#667781] block text-right mt-1 leading-none"
+              >10:00</span
+            >
+          </div>
+        </div>
+        <!-- Messages injected here -->
+      </div>
+
+      <!-- Loading Indicator -->
+      <div
+        id="loading-indicator"
+        class="hidden absolute bottom-[110px] left-4 bg-white px-4 py-2 rounded-full shadow-md z-10 transition-all"
+      >
+        <div class="flex items-center gap-2">
+          <div class="dot-flashing ml-2"></div>
+        </div>
+      </div>
+
+      <!-- Footer Section: Suggestions + Input -->
+      <div class="bg-[#f0f2f5] z-10 flex flex-col">
+        <!-- Dynamic Suggestions (Scrollable) -->
+        <div
+          id="suggestion-container"
+          class="flex gap-2 overflow-x-auto p-2 pt-3 no-scrollbar whitespace-nowrap px-4 cursor-grab active:cursor-grabbing"
+        >
+          <!-- Suggestions injected via JS -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-2 flex items-end gap-2 pb-3">
+          <div
+            class="flex-1 bg-white rounded-3xl flex items-center shadow-sm border-none px-3 py-1"
+          >
+            <textarea
+              id="user-input"
+              rows="1"
+              placeholder="Ketik pesan..."
+              class="flex-1 p-2 bg-transparent border-none focus:outline-none text-[15px] text-[#111b21] resize-none max-h-24 leading-snug"
+              style="scrollbar-width: none"
+              onkeypress="handleEnter(event)"
+            ></textarea>
+          </div>
+          <button
+            onclick="sendMessage()"
+            class="bg-wa-teal p-3 rounded-full text-white hover:bg-wa-dark-teal transition shadow-sm transform active:scale-95 flex-shrink-0"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ADMIN MODAL -->
+      <div
+        id="admin-modal"
+        class="absolute inset-0 bg-black bg-opacity-60 z-50 hidden flex items-end md:items-center justify-center backdrop-blur-sm transition-all"
+      >
+        <div
+          class="bg-[#f0f2f5] w-full md:w-[95%] md:rounded-2xl rounded-t-2xl overflow-hidden shadow-2xl h-[85vh] md:h-auto max-h-[85vh] flex flex-col"
+        >
+          <div
+            class="bg-wa-teal p-4 text-white flex justify-between items-center shrink-0"
+          >
+            <h2 class="text-lg font-bold flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Dashboard Admin
+            </h2>
+            <button
+              onclick="toggleAdminModal()"
+              class="text-white hover:bg-white/20 rounded-full p-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div class="p-4 overflow-y-auto flex-1">
+            <!-- CRUD Form -->
+            <div
+              class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-4 shrink-0"
+            >
+              <h3
+                class="text-sm font-bold text-wa-teal mb-3 flex justify-between items-center"
+              >
+                <span id="form-title">Tambah Produk Baru</span>
+                <button
+                  id="cancel-edit-btn"
+                  onclick="cancelEdit()"
+                  class="hidden text-xs text-red-500 hover:underline"
+                >
+                  Cancel Edit
+                </button>
+              </h3>
+              <div class="space-y-3">
+                <input
+                  type="text"
+                  id="prod-name"
+                  placeholder="Nama Produk (cth. Kemeja Flanel)"
+                  class="w-full p-2.5 text-sm border-gray-300 border rounded-lg focus:outline-none focus:border-wa-teal focus:ring-1 focus:ring-wa-teal transition"
+                />
+                <div class="flex gap-2 sm:flex-row flex-col">
+                  <input
+                    type="text"
+                    id="prod-price"
+                    placeholder="Harga/Info (cth. 150rb, Size L)"
+                    class="w-full p-2.5 text-sm border-gray-300 border rounded-lg focus:outline-none focus:border-wa-teal focus:ring-1 focus:ring-wa-teal transition"
+                  />
+                  <button
+                    id="save-prod-btn"
+                    onclick="saveProduct()"
+                    class="bg-wa-teal text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-wa-dark-teal transition flex items-center justify-center gap-1 sm:w-auto w-full"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    <span id="save-btn-text">Simpan</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product List -->
+            <div>
+              <h3
+                class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-1"
+              >
+                Knowledge Base Saat Ini
+              </h3>
+              <div id="product-list" class="space-y-2 pb-4">
+                <!-- Items rendered here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // --- 1. CONFIGURATION & STATE ---
+      const apiKey = "AIzaSyDq7dCOSYYfh9vS7aedT6SiIEtrnyhv1BE"; // YOUR API KEY
+
+      let products = [
+        {
+          id: 1,
+          name: "Kaos Polos Hitam",
+          price: "50rb",
+          info: "Bahan Combed 30s, Adem. Size lengkap.",
+        },
+        {
+          id: 2,
+          name: "Jaket Denim",
+          price: "250rb",
+          info: "Vintage wash, Size M-XL. Best seller!",
+        },
+      ];
+
+      const storeInfo = {
+        hours: "Senin - Sabtu, 09.00 - 17.00 WIB",
+        location: "Jalan Merdeka No. 10, Jakarta Selatan",
+        shipping: "JNE, J&T, SiCepat. Pengiriman setiap jam 4 sore.",
+      };
+
+      // UI State
+      let editingProductId = null;
+      let isTyping = false;
+
+      // Default initial suggestions
+      let currentSuggestions = [
+        "Ada produk apa aja?",
+        "Toko buka jam berapa?",
+        "Lokasi dimana?",
+        "Cara order gimana?",
+      ];
+
+      // --- 2. DOM ELEMENTS ---
+      const chatContainer = document.getElementById("chat-container");
+      const userInput = document.getElementById("user-input");
+      const productListEl = document.getElementById("product-list");
+      const adminModal = document.getElementById("admin-modal");
+      const loadingIndicator = document.getElementById("loading-indicator");
+      const suggestionContainer = document.getElementById(
+        "suggestion-container"
+      );
+      const statusText = document.getElementById("status-text");
+
+      // Admin Forms
+      const formTitle = document.getElementById("form-title");
+      const prodNameInput = document.getElementById("prod-name");
+      const prodPriceInput = document.getElementById("prod-price");
+      const saveProdBtn = document.getElementById("save-prod-btn");
+      const saveBtnText = document.getElementById("save-btn-text");
+      const cancelEditBtn = document.getElementById("cancel-edit-btn");
+
+      // --- 3. RENDER FUNCTIONS ---
+
+      function renderProductList() {
+        productListEl.innerHTML = "";
+        if (products.length === 0) {
+          productListEl.innerHTML =
+            '<div class="text-center text-gray-400 text-sm py-4">Belum ada produk.</div>';
+          return;
+        }
+        products.forEach((p) => {
+          const item = document.createElement("div");
+          item.className =
+            "flex justify-between items-start bg-white p-3 rounded-xl border border-gray-100 shadow-sm group hover:border-wa-teal transition-colors";
+          item.innerHTML = `
+                    <div class="flex-1 pr-2">
+                        <div class="font-semibold text-gray-800 text-[15px]">${p.name}</div>
+                        <div class="text-sm text-gray-600 mt-0.5">${p.price} <span class="text-gray-400 mx-1">•</span> <span class="text-xs">${p.info}</span></div>
+                    </div>
+                    <div class="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <button onclick="startEditProduct(${p.id})" class="p-2 text-gray-500 hover:text-wa-teal hover:bg-gray-100 rounded-full transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button onclick="deleteProduct(${p.id})" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linpejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </div>
+                `;
+          productListEl.appendChild(item);
+        });
+      }
+
+      function renderSuggestions(list = currentSuggestions) {
+        suggestionContainer. nnerHTML = "";
+        list.forEach((text) => {
+          const chip = document.createElement("button");
+          chip.className =
+            "px-3 py-1.5 bg-white border border-gray-200 rounded-full text-[13px] text-gray-600 hover:bg-gray-50 hover:border-wa-teal transition flex-shrink-0 shadow-sm active:scale-95 animate-[fadeIn_0.5s_ease-out]";
+          chip.textContent = text;
+          chip.onclick = () => sendSuggestion(text);
+          suggestionContainer.appendChild(chip);
+        });
+      }
+
+      function createTime() {
+        const now = new Date();
+        return now.getHours() + ":" + String(now.getMinutes()).padStart(2, "0");
+      }
+
+      function appendMessage(text, isUser) {
+        const div = document.createElement("div");
+        div.className = `flex ${
+          isUser ? "justify-end" : "justify-start"
+        } mb-3 animate-[fadeIn_0.3s_ease-in-out]`;
+
+        const bubbleColor = isUser ? "bg-[#d9fdd3]" : "bg-white";
+        const borderRadius = isUser ? "rounded-tr-none" : "rounded-tl-none";
+        const checkmark = isUser
+          ? `<span class="ml-1 text-[#53bdeb]">✓✓</span>`
+          : "";
+        const textColor = text.startsWith("⚠️")
+          ? "text-red-600"
+          : "text-[#111b21]";
+
+        div.innerHTML = `
+                <div class="${bubbleColor} rounded-lg ${borderRadius} p-2.5 px-3 max-w-[85%] shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] relative ${textColor} text-[14.2px] leading-snug">
+                    <p>${text.replace(/\n/g, "<br>")}</p>
+                    <div class="flex justify-end items-center gap-1 mt-1 relative -bottom-0.5">
+                        <span class="text-[11px] text-[#667781] leading-none">${createTime()}</span>
+                        ${checkmark}
+                    </div>
+                </div>
+            `;
+
+        chatContainer.appendChild(div);
+        chatContainer.scrollTo({
+          top: chatContainer.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+
+      // --- 4. ADMIN CRUD LOGIC ---
+
+      function toggleAdminModal() {
+        adminModal.classList.toggle("hidden");
+        if (!adminModal.classList.contains("hidden")) {
+          renderProductList();
+          cancelEdit();
+        }
+      }
+
+      function saveProduct() {
+        const name = prodNameInput.value.trim();
+        const priceInfo = prodPriceInput.value.trim();
+
+        if (!name || !priceInfo)
+          return alert("Mohon isi Nama Produk dan Harga/Info.");
+
+        if (editingProductId) {
+          const product = products.find((p) => p.id === editingProductId);
+          if (product) {
+            product.name = name;
+            const parts = priceInfo.split(",").map((s) => s.trim());
+            product.price = parts[0] || priceInfo;
+            product.info = parts.slice(1).join(", ") || "Updated via Admin";
+          }
+        } else {
+          const parts = priceInfo.split(",").map((s) => s.trim());
+          products.push({
+            id: Date.now(),
+            name: name,
+            price: parts[0] || priceInfo,
+            info: parts.slice(1).join(", ") || "New Product",
+          });
+        }
+
+        cancelEdit();
+        renderProductList();
+        toggleAdminModal();
+        appendMessage(
+          "✅ *System:* Database produk berhasil diperbarui oleh Admin.",
+          false
+        );
+      }
+
+      function deleteProduct(id) {
+        if (confirm("Yakin ingin menghapus produk ini?")) {
+          products = products.filter((p) => p.id !== id);
+          renderProductList();
+          if (editingProductId === id) cancelEdit();
+        }
+      }
+
+      function startEditProduct(id) {
+        const product = products.find((p) => p.id === id);
+        if (!product) return;
+        editingProductId = id;
+        formTitle.textContent = `Edit Produk: ${product.name}`;
+        prodNameInput.value = product.name;
+        prodPriceInput.value = `${product.price}, ${product.info}`;
+        saveBtnText.textContent = "Update Produk";
+        saveProdBtn.classList.remove("bg-wa-teal", "hover:bg-wa-dark-teal");
+        saveProdBtn.classList.add("bg-blue-600", "hover:bg-blue-700");
+        cancelEditBtn.classList.remove("hidden");
+        prodNameInput.focus();
+      }
+
+      function cancelEdit() {
+        editingProductId = null;
+        formTitle.textContent = "Tambah Produk Baru";
+        prodNameInput.value = "";
+        prodPriceInput.value = "";
+        saveBtnText.textContent = "Simpan";
+        saveProdBtn.classList.add("bg-wa-teal", "hover:bg-wa-dark-teal");
+        saveProdBtn.classList.remove("bg-blue-600", "hover:bg-blue-700");
+        cancelEditBtn.classList.add("hidden");
+      }
+
+      // --- 5. CHAT & AI LOGIC ---
+
+      function handleEnter(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+        e.target.style.height = "auto";
+        e.target.style.height = e.target.scrollHeight + "px";
+      }
+
+      function sendSuggestion(text) {
+        userInput.value = text;
+        userInput.style.height = "auto";
+        sendMessage();
+      }
+
+      async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text || isTyping) return;
+
+        isTyping = true;
+        appendMessage(text, true);
+        userInput.value = "";
+        userInput.style.height = "auto";
+        loadingIndicator.classList.remove("hidden");
+        statusText.textContent = "typing...";
+
+        // Clear suggestions while thinking
+        suggestionContainer.innerHTML = "";
+
+        try {
+          const dbContext = {
+            products: products,
+            store_information: storeInfo,
+          };
+          const dbString = JSON.stringify(dbContext);
+
+          // Prompt upgraded to request JSON
+          const systemPrompt = `
+                    Role: CS AI Toko "Nyapa.ai".
+                    Tone: Casual Indonesia (Kak).
+                    
+                    DATA:
+                    ${dbString}
+                    
+                    TUGAS:
+                    Analisis pertanyaan user. Jawab berdasarkan data di atas.
+                    Lalu, berikan 3-4 opsi pertanyaan lanjutan singkat untuk user (suggestions).
+                    
+                    FORMAT RESPON WAJIB JSON:
+                    {
+                        "reply": "Jawaban kamu disini (boleh pakai emoji)",
+                        "suggestions": ["Saran 1", "Saran 2", "Saran 3"]
+                    }
+                `;
+
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: text }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: { response_mime_type: "application/json" },
+              }),
+            }
+          );
+
+          const data = await response.json();
+          if (data.error) throw new Error(data.error.message);
+
+          // Parse JSON response
+          const rawText = data.candidates[0].content.parts[0].text;
+          const result = JSON.parse(rawText);
+
+          appendMessage(result.reply, false);
+
+          // Update dynamic suggestions
+          if (result.suggestions && Array.isArray(result.suggestions)) {
+            renderSuggestions(result.suggestions);
+          }
+        } catch (error) {
+          console.error(error);
+          appendMessage("⚠️ Maaf, ada gangguan sistem.", false);
+          renderSuggestions(["Coba Lagi", "Menu Utama"]); // Fallback suggestions
+        } finally {
+          loadingIndicator.classList.add("hidden");
+          statusText.textContent = "Online";
+          isTyping = false;
+        }
+      }
+
+      // Initialize
+      renderSuggestions();
+
+      const style = document.createElement("style");
+      style.innerHTML = `@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`;
+      document.head.appendChild(style);
+    </script>
+  </body>
+</html>
