@@ -224,7 +224,7 @@
 
     <script>
         // --- 1. CONFIGURATION & STATE ---
-        // VERSI 8: CLEAN SERVER-SIDE (Tanpa Hybrid, Tanpa API Key di Client)
+        // API KEY TELAH DIHAPUS - DIGANTIKAN OLEH BACKEND (Vercel)
         
         let products = [
             { id: 1, name: "SwiftRun Lite", price: "280k", info: "Ringan & empuk, cocok buat jogging harian.", sizes: "41, 42", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80" },
@@ -241,9 +241,14 @@
             payment_methods: "BCA, Mandiri, BNI, DANA, OVO, GoPay, QRIS, COD"
         };
 
+        // --- GLOBAL CHAT HISTORY ---
+        let chatHistory = []; 
+
         let editingProductId = null;
         let isTyping = false;
-        let currentSuggestions = ["Cari sepatu running", "Ada sepatu casual?", "Liat rekomendasi dong", "Cek ukuran 43"];
+        
+        // SUGGESTIONS SESUAI SKENARIO AWAL
+        let currentSuggestions = ["Halo", "Ada sepatu running?", "Bedanya apa?", "Yang SwiftRun ukuran 41 ada?"];
 
         // --- 2. DOM ELEMENTS & HELPER FUNCTIONS ---
         const chatContainer = document.getElementById('chat-container');
@@ -316,6 +321,7 @@
             const borderRadius = isUser ? 'rounded-tr-none' : 'rounded-tl-none';
             const checkmark = isUser ? `<span class="ml-1 text-[#53bdeb]">✓✓</span>` : '';
             const textColor = text.startsWith("⚠️") ? 'text-red-600' : 'text-[#111b21] dark:text-gray-100';
+            
             let formattedText = text.replace(/(https?:\/\/[^\s]+)/g, (url) => {
                 if(url.match(/\.(jpeg|jpg|gif|png|webp)$/) != null || url.includes('unsplash') || url.includes('placehold') || url.includes('img.susercontent')) {
                     return `<br><img src="${url}" class="rounded-lg mt-2 w-full max-w-[250px] object-cover border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-90 transition">`;
@@ -347,32 +353,42 @@
             saveBtnText.textContent = "Simpan"; saveProdBtn.classList.replace('bg-blue-600', 'bg-wa-teal'); cancelEditBtn.classList.add('hidden');
         }
 
-        // --- 5. CHAT & AI LOGIC (PURE SERVER SIDE) ---
+        // --- 5. CHAT & AI LOGIC (WITH HISTORY & SCENARIO) ---
+
         function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }
         function sendSuggestion(text) { userInput.value = text; userInput.style.height = 'auto'; sendMessage(); }
 
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text || isTyping) return;
-            isTyping = true; appendMessage(text, true); userInput.value = ''; userInput.style.height = 'auto'; 
-            loadingIndicator.classList.remove('hidden'); statusText.textContent = "typing..."; suggestionContainer.innerHTML = '';
+
+            isTyping = true;
+            appendMessage(text, true);
+            userInput.value = '';
+            userInput.style.height = 'auto'; 
+            loadingIndicator.classList.remove('hidden');
+            statusText.textContent = "typing...";
+            suggestionContainer.innerHTML = '';
+
+            // 1. ADD USER MESSAGE TO HISTORY
+            chatHistory.push({ role: "user", parts: [{ text: text }] });
 
             try {
                 const dbContext = { products: products, store_information: storeInfo };
                 const dbString = JSON.stringify(dbContext);
                 
-                // GANTI DARI SINI (const systemPrompt = ...) SAMPAI SEBELUM fetch('/api/chat'...)
+                // SKENARIO KHUSUS DEMO
                 const systemPrompt = `
                     **IDENTITY:**
                     Anda adalah "Naya", admin ramah dari toko sepatu "Sapa Sepatu".
-                    Tone: Casual, emoticon friendly (gunakan 'Kak').
+                    Tone: Casual, fun, emoticon friendly (gunakan 'Kak', 'Gan').
                     
-                    **DATABASE & FAKTA: (Wajib dipatuhi)**
+                    **DATABASE & FAKTA:**
                     ${dbString}
-
+                    
                     **SKENARIO DEMO (IKUTI ALUR INI):**
                     1. **Greeting:** Sapa user "Hai kak! 👋 Selamat datang di Sapa Sepatu. Aku Naya...". Tanya lagi cari sepatu running/casual?
-                    2. **Rekomendasi:** Jika user tanya "Sepatu Running", tawarkan "SwiftRun Lite (280k)" & "AeroPulse Runner (320k)".
+                    2. **Rekomendasi:** Jika user tanya "sepatu running", tawarkan "SwiftRun Lite (280k)" & "AeroPulse Runner (320k)".
                     3. **Edukasi:** Jika user tanya "bedanya?", jelaskan SwiftRun (Nyaman/Santai) vs AeroPulse (Stabil/Jarak Jauh). Tanya gaya lari user.
                     4. **Cek Stok:** Jika user tanya stok SwiftRun, bilang ready size 41, 42. Tanya ukuran kaki user.
                     5. **Alternatif:** Jika user bilang size "43" (dan SwiftRun habis di data), tawarkan "UrbanFlex Motion (300k)" & "PrimeShift Runner (350k)". Tawarkan lihat gambar.
@@ -389,47 +405,60 @@
                     }
                 `;
 
-                // --- PURE SERVER-SIDE LOGIC (V8) ---
-                console.log("Calling Vercel Backend...");
+                // 2. SEND HISTORY TO BACKEND
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, systemPrompt: systemPrompt })
+                    body: JSON.stringify({ 
+                        history: chatHistory, 
+                        systemPrompt: systemPrompt 
+                    })
                 });
 
                 const data = await response.json();
                 if (data.error) throw new Error(JSON.stringify(data.error));
                 
-                // Handle response
                 let rawText;
                 if(data.candidates) {
-                    rawText = data.candidates[0].content.parts[0].text; // Direct Google Structure
+                    rawText = data.candidates[0].content.parts[0].text; 
                 } else {
-                    rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data); // Fallback
+                    rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data); 
                 }
 
                 let result;
                 try { result = JSON.parse(rawText); } 
                 catch (e) { result = { reply: rawText, suggestions: [] }; }
 
+                // 3. ADD AI RESPONSE TO HISTORY
+                chatHistory.push({ role: "model", parts: [{ text: result.reply }] });
+
                 appendMessage(result.reply, false);
-                if(result.suggestions && Array.isArray(result.suggestions)) renderSuggestions(result.suggestions);
+                
+                if(result.suggestions && Array.isArray(result.suggestions)) {
+                    renderSuggestions(result.suggestions);
+                }
 
             } catch (error) {
                 console.error("DEBUG ERROR:", error);
                 let errorMsg = "⚠️ Maaf, Naya lagi pusing.";
-                if(error.message.includes("404")) errorMsg += " (Backend /api/chat tidak ditemukan. Test di Vercel)";
+                if(error.message.includes("404")) errorMsg += " (Backend /api/chat tidak ditemukan. Test di Vercel ya!)";
                 else if(error.message.includes("500")) errorMsg += " (Server Error. Cek API Key di Vercel).";
                 else errorMsg += ` (${error.message.substring(0, 50)}...)`;
                 
                 appendMessage(errorMsg, false);
                 renderSuggestions(["Coba Lagi", "Menu Utama"]); 
             } finally {
-                loadingIndicator.classList.add('hidden'); statusText.textContent = "Online"; isTyping = false;
+                loadingIndicator.classList.add('hidden');
+                statusText.textContent = "Online";
+                isTyping = false;
             }
         }
+
         renderSuggestions();
-        const style = document.createElement('style'); style.innerHTML = `@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`; document.head.appendChild(style);
+        
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
