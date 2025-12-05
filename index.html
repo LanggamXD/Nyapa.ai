@@ -224,7 +224,7 @@
 
     <script>
         // --- 1. CONFIGURATION & STATE ---
-        // API KEY TELAH DIHAPUS - DIGANTIKAN OLEH BACKEND (Vercel)
+        // VERSI 8: CLEAN SERVER-SIDE (Tanpa Hybrid, Tanpa API Key di Client)
         
         let products = [
             { id: 1, name: "SwiftRun Lite", price: "280k", info: "Ringan & empuk, cocok buat jogging harian.", sizes: "41, 42", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80" },
@@ -245,7 +245,7 @@
         let isTyping = false;
         let currentSuggestions = ["Cari sepatu running", "Ada sepatu casual?", "Liat rekomendasi dong", "Cek ukuran 43"];
 
-        // --- 2. DOM ELEMENTS ---
+        // --- 2. DOM ELEMENTS & HELPER FUNCTIONS ---
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
         const productListEl = document.getElementById('product-list');
@@ -261,41 +261,27 @@
         const saveProdBtn = document.getElementById('save-prod-btn');
         const saveBtnText = document.getElementById('save-btn-text');
         const cancelEditBtn = document.getElementById('cancel-edit-btn');
-        
         const iconSun = document.getElementById('icon-sun');
         const iconMoon = document.getElementById('icon-moon');
-
-        // --- 3. HELPER FUNCTIONS ---
 
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
             const isDark = document.documentElement.classList.contains('dark');
-            if (isDark) {
-                iconSun.classList.remove('hidden');
-                iconMoon.classList.add('hidden');
-            } else {
-                iconSun.classList.add('hidden');
-                iconMoon.classList.remove('hidden');
-            }
+            if (isDark) { iconSun.classList.remove('hidden'); iconMoon.classList.add('hidden'); }
+            else { iconSun.classList.add('hidden'); iconMoon.classList.remove('hidden'); }
         }
         
         function renderProductList() {
             productListEl.innerHTML = '';
-            if(products.length === 0) {
-                 productListEl.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">Belum ada produk.</div>';
-                 return;
-            }
+            if(products.length === 0) { productListEl.innerHTML = '<div class="text-center text-gray-400 text-sm py-4">Belum ada produk.</div>'; return; }
             products.forEach((p) => {
                 const imgUrl = p.image || "https://placehold.co/100?text=No+Img";
                 const sizeInfo = p.sizes ? `Size: ${p.sizes}` : '';
-
                 const item = document.createElement('div');
                 item.className = "flex justify-between items-start bg-white dark:bg-gray-700 p-3 rounded-xl border border-gray-100 dark:border-gray-600 shadow-sm group hover:border-wa-teal transition-colors";
                 item.innerHTML = `
                     <div class="flex items-center gap-3 flex-1 overflow-hidden">
-                        <div class="w-12 h-12 bg-gray-100 dark:bg-gray-600 rounded-lg flex-shrink-0 overflow-hidden border border-gray-200 dark:border-gray-500">
-                            <img src="${imgUrl}" alt="${p.name}" class="w-full h-full object-cover">
-                        </div>
+                        <div class="w-12 h-12 bg-gray-100 dark:bg-gray-600 rounded-lg flex-shrink-0 overflow-hidden border border-gray-200 dark:border-gray-500"><img src="${imgUrl}" alt="${p.name}" class="w-full h-full object-cover"></div>
                         <div class="min-w-0">
                             <div class="font-semibold text-gray-800 dark:text-gray-100 text-[15px] truncate">${p.name}</div>
                             <div class="text-sm text-gray-600 dark:text-gray-300 mt-0.5 truncate">${p.price} <span class="text-gray-400 mx-1">•</span> <span class="text-xs">${p.info}</span></div>
@@ -303,14 +289,9 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity ml-2">
-                        <button onclick="startEditProduct(${p.id})" class="p-2 text-gray-500 dark:text-gray-400 hover:text-wa-teal dark:hover:text-teal-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                        </button>
-                        <button onclick="deleteProduct(${p.id})" class="p-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                    </div>
-                `;
+                        <button onclick="startEditProduct(${p.id})" class="p-2 text-gray-500 dark:text-gray-400 hover:text-wa-teal dark:hover:text-teal-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                        <button onclick="deleteProduct(${p.id})" class="p-2 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    </div>`;
                 productListEl.appendChild(item);
             });
         }
@@ -326,176 +307,129 @@
             });
         }
 
-        function createTime() {
-            const now = new Date();
-            return now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0');
-        }
+        function createTime() { const now = new Date(); return now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0'); }
 
         function appendMessage(text, isUser) {
             const div = document.createElement('div');
             div.className = `flex ${isUser ? 'justify-end' : 'justify-start'} mb-3 animate-[fadeIn_0.3s_ease-in-out]`;
-            
             const bubbleColor = isUser ? 'bg-[#d9fdd3] dark:bg-wa-dark-msg-out' : 'bg-white dark:bg-wa-dark-msg-in';
             const borderRadius = isUser ? 'rounded-tr-none' : 'rounded-tl-none';
             const checkmark = isUser ? `<span class="ml-1 text-[#53bdeb]">✓✓</span>` : '';
             const textColor = text.startsWith("⚠️") ? 'text-red-600' : 'text-[#111b21] dark:text-gray-100';
-            
             let formattedText = text.replace(/(https?:\/\/[^\s]+)/g, (url) => {
                 if(url.match(/\.(jpeg|jpg|gif|png|webp)$/) != null || url.includes('unsplash') || url.includes('placehold') || url.includes('img.susercontent')) {
                     return `<br><img src="${url}" class="rounded-lg mt-2 w-full max-w-[250px] object-cover border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-90 transition">`;
                 }
                 return `<a href="${url}" target="_blank" class="text-blue-500 hover:underline break-all">${url}</a>`;
             });
-
-            div.innerHTML = `
-                <div class="${bubbleColor} rounded-lg ${borderRadius} p-2.5 px-3 max-w-[85%] shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] relative ${textColor} text-[14.2px] leading-snug">
-                    <p>${formattedText.replace(/\n/g, '<br>')}</p>
-                    <div class="flex justify-end items-center gap-1 mt-1 relative -bottom-0.5">
-                        <span class="text-[11px] text-[#667781] dark:text-gray-400 leading-none">${createTime()}</span>
-                        ${checkmark}
-                    </div>
-                </div>
-            `;
-            
+            div.innerHTML = `<div class="${bubbleColor} rounded-lg ${borderRadius} p-2.5 px-3 max-w-[85%] shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] relative ${textColor} text-[14.2px] leading-snug"><p>${formattedText.replace(/\n/g, '<br>')}</p><div class="flex justify-end items-center gap-1 mt-1 relative -bottom-0.5"><span class="text-[11px] text-[#667781] dark:text-gray-400 leading-none">${createTime()}</span>${checkmark}</div></div>`;
             chatContainer.appendChild(div);
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
         }
         
         // --- ADMIN FUNCTIONS ---
-        function toggleAdminModal() {
-            adminModal.classList.toggle('hidden');
-            if(!adminModal.classList.contains('hidden')){ renderProductList(); cancelEdit(); }
-        }
-
+        function toggleAdminModal() { adminModal.classList.toggle('hidden'); if(!adminModal.classList.contains('hidden')){ renderProductList(); cancelEdit(); } }
         function saveProduct() {
-            const name = prodNameInput.value.trim();
-            const priceInfo = prodPriceInput.value.trim();
-            const imgUrl = prodImgInput.value.trim();
+            const name = prodNameInput.value.trim(); const priceInfo = prodPriceInput.value.trim(); const imgUrl = prodImgInput.value.trim();
             if (!name || !priceInfo) return alert("Mohon isi Nama Produk dan Harga/Info.");
-            if (editingProductId) {
-                const product = products.find(p => p.id === editingProductId);
-                if(product) { product.name = name; const parts = priceInfo.split(',').map(s => s.trim()); product.price = parts[0] || priceInfo; product.info = parts.slice(1).join(', ') || "Updated"; product.image = imgUrl; }
-            } else {
-                 const parts = priceInfo.split(',').map(s => s.trim());
-                products.push({ id: Date.now(), name: name, price: parts[0] || priceInfo, info: parts.slice(1).join(', ') || "New", image: imgUrl });
-            }
-            cancelEdit(); renderProductList(); toggleAdminModal(); 
-            appendMessage("✅ *System:* Database produk berhasil diperbarui oleh Admin.", false);
+            if (editingProductId) { const product = products.find(p => p.id === editingProductId); if(product) { product.name = name; const parts = priceInfo.split(',').map(s => s.trim()); product.price = parts[0] || priceInfo; product.info = parts.slice(1).join(', ') || "Updated"; product.image = imgUrl; }
+            } else { const parts = priceInfo.split(',').map(s => s.trim()); products.push({ id: Date.now(), name: name, price: parts[0] || priceInfo, info: parts.slice(1).join(', ') || "New", image: imgUrl }); }
+            cancelEdit(); renderProductList(); toggleAdminModal(); appendMessage("✅ *System:* Database produk berhasil diperbarui oleh Admin.", false);
         }
-
-        function deleteProduct(id) {
-            if(confirm("Yakin hapus?")) { products = products.filter(p => p.id !== id); renderProductList(); if (editingProductId === id) cancelEdit(); }
-        }
-
+        function deleteProduct(id) { if(confirm("Yakin hapus?")) { products = products.filter(p => p.id !== id); renderProductList(); if (editingProductId === id) cancelEdit(); } }
         function startEditProduct(id) {
             const product = products.find(p => p.id === id); if(!product) return;
             editingProductId = id; formTitle.textContent = `Edit Produk: ${product.name}`; prodNameInput.value = product.name; prodPriceInput.value = `${product.price}, ${product.info}`; prodImgInput.value = product.image || ""; 
             saveBtnText.textContent = "Update"; saveProdBtn.classList.replace('bg-wa-teal', 'bg-blue-600'); cancelEditBtn.classList.remove('hidden'); prodNameInput.focus();
         }
-
         function cancelEdit() {
             editingProductId = null; formTitle.textContent = "Tambah Produk"; prodNameInput.value = ''; prodPriceInput.value = ''; prodImgInput.value = ''; 
             saveBtnText.textContent = "Simpan"; saveProdBtn.classList.replace('bg-blue-600', 'bg-wa-teal'); cancelEditBtn.classList.add('hidden');
         }
 
-        // --- 5. CHAT & AI LOGIC (SECURE BACKEND CALL) ---
-
-        function handleEnter(e) {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-            e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px';
-        }
-
-        function sendSuggestion(text) {
-            userInput.value = text; userInput.style.height = 'auto'; sendMessage();
-        }
+        // --- 5. CHAT & AI LOGIC (PURE SERVER SIDE) ---
+        function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }
+        function sendSuggestion(text) { userInput.value = text; userInput.style.height = 'auto'; sendMessage(); }
 
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text || isTyping) return;
-
-            isTyping = true;
-            appendMessage(text, true);
-            userInput.value = '';
-            userInput.style.height = 'auto'; 
-            loadingIndicator.classList.remove('hidden');
-            statusText.textContent = "typing...";
-            suggestionContainer.innerHTML = '';
+            isTyping = true; appendMessage(text, true); userInput.value = ''; userInput.style.height = 'auto'; 
+            loadingIndicator.classList.remove('hidden'); statusText.textContent = "typing..."; suggestionContainer.innerHTML = '';
 
             try {
-                // Construct context in frontend (so dynamic products work)
                 const dbContext = { products: products, store_information: storeInfo };
                 const dbString = JSON.stringify(dbContext);
                 
+                // GANTI DARI SINI (const systemPrompt = ...) SAMPAI SEBELUM fetch('/api/chat'...)
                 const systemPrompt = `
                     **IDENTITY:**
-                    Anda adalah "Naya", asisten virtual ramah dari "Sapa Sepatu".
-                    Tujuan: Membantu pelanggan mencari sepatu, menjelaskan perbedaan produk, mengecek stok, dan memandu pembayaran.
-                    Tone: Casual, Emoticon friendly, Sopan (Gunakan 'Kak').
+                    Anda adalah "Naya", admin ramah dari toko sepatu "Sapa Sepatu".
+                    Tone: Casual, emoticon friendly (gunakan 'Kak').
                     
-                    **DATABASE & FAKTA (WAJIB DIPATUHI):**
+                    **DATABASE & FAKTA: (Wajib dipatuhi)**
                     ${dbString}
-                    
-                    **ATURAN KHUSUS GAMBAR:**
-                    - Jika user meminta LIHAT gambar/foto produk, dan ada URL di data, WAJIB KIRIM LINK GAMBARNYA.
-                    
-                    **ALUR & RESPON:**
-                    1. Greeting & Value: Sambut, tanya kebutuhan.
-                    2. Rekomendasi: Tawarkan SwiftRun/AeroPulse untuk running.
-                    3. Edukasi: Jelaskan beda produk.
-                    4. Cek Ukuran: SwiftRun (41,42), AeroPulse (40-43).
-                    5. Alternatif: UrbanFlex/PrimeShift untuk size 43+.
-                    6. Closing: Konfirmasi pesanan, Minta alamat, Info Ongkir Gratis, Pembayaran (BCA 1234567890).
+
+                    **SKENARIO DEMO (IKUTI ALUR INI):**
+                    1. **Greeting:** Sapa user "Hai kak! 👋 Selamat datang di Sapa Sepatu. Aku Naya...". Tanya lagi cari sepatu running/casual?
+                    2. **Rekomendasi:** Jika user tanya "Sepatu Running", tawarkan "SwiftRun Lite (280k)" & "AeroPulse Runner (320k)".
+                    3. **Edukasi:** Jika user tanya "bedanya?", jelaskan SwiftRun (Nyaman/Santai) vs AeroPulse (Stabil/Jarak Jauh). Tanya gaya lari user.
+                    4. **Cek Stok:** Jika user tanya stok SwiftRun, bilang ready size 41, 42. Tanya ukuran kaki user.
+                    5. **Alternatif:** Jika user bilang size "43" (dan SwiftRun habis di data), tawarkan "UrbanFlex Motion (300k)" & "PrimeShift Runner (350k)". Tawarkan lihat gambar.
+                    6. **Gambar:** Jika user mau lihat gambar, KIRIM LINK GAMBARNYA dari database.
+                    7. **Closing:** Jika user pilih "UrbanFlex", konfirmasi pesanan (Barang, Size, Harga). Minta alamat lengkap.
+                    8. **Ongkir:** Setelah dapat alamat, bilang "Ongkir GRATIS 🚚✨". Tawarkan Bayar (BCA/E-wallet/COD).
+                    9. **Payment:** Jika pilih Transfer BCA, kasih rek: 1234567890 a/n Sapa Sepatu. Minta bukti tf.
+                    10. **Selesai:** Terima kasih dan info pengiriman 1-2 hari.
 
                     **FORMAT RESPON JSON:**
                     {
-                        "reply": "Isi balasan Naya",
-                        "suggestions": ["Saran 1", "Saran 2"]
+                        "reply": "Isi balasan Naya (gunakan line break \\n untuk ganti baris)",
+                        "suggestions": ["Saran 1", "Saran 2", "Saran 3"]
                     }
                 `;
 
-                // CALL BACKEND VERCEL
+                // --- PURE SERVER-SIDE LOGIC (V8) ---
+                console.log("Calling Vercel Backend...");
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: text,
-                        systemPrompt: systemPrompt
-                    })
+                    body: JSON.stringify({ message: text, systemPrompt: systemPrompt })
                 });
 
                 const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
+                if (data.error) throw new Error(JSON.stringify(data.error));
                 
-                const rawText = data.candidates[0].content.parts[0].text;
-                let result;
-                try {
-                     result = JSON.parse(rawText);
-                } catch (e) {
-                     result = { reply: rawText, suggestions: [] };
+                // Handle response
+                let rawText;
+                if(data.candidates) {
+                    rawText = data.candidates[0].content.parts[0].text; // Direct Google Structure
+                } else {
+                    rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data); // Fallback
                 }
+
+                let result;
+                try { result = JSON.parse(rawText); } 
+                catch (e) { result = { reply: rawText, suggestions: [] }; }
 
                 appendMessage(result.reply, false);
-                
-                if(result.suggestions && Array.isArray(result.suggestions)) {
-                    renderSuggestions(result.suggestions);
-                }
+                if(result.suggestions && Array.isArray(result.suggestions)) renderSuggestions(result.suggestions);
 
             } catch (error) {
-                console.error(error);
-                appendMessage("⚠️ Maaf, Naya lagi pusing dikit (Server Error). Coba lagi ya kak!", false);
+                console.error("DEBUG ERROR:", error);
+                let errorMsg = "⚠️ Maaf, Naya lagi pusing.";
+                if(error.message.includes("404")) errorMsg += " (Backend /api/chat tidak ditemukan. Test di Vercel)";
+                else if(error.message.includes("500")) errorMsg += " (Server Error. Cek API Key di Vercel).";
+                else errorMsg += ` (${error.message.substring(0, 50)}...)`;
+                
+                appendMessage(errorMsg, false);
                 renderSuggestions(["Coba Lagi", "Menu Utama"]); 
             } finally {
-                loadingIndicator.classList.add('hidden');
-                statusText.textContent = "Online";
-                isTyping = false;
+                loadingIndicator.classList.add('hidden'); statusText.textContent = "Online"; isTyping = false;
             }
         }
-
         renderSuggestions();
-        
-        const style = document.createElement('style');
-        style.innerHTML = `@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`;
-        document.head.appendChild(style);
+        const style = document.createElement('style'); style.innerHTML = `@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`; document.head.appendChild(style);
     </script>
 </body>
 </html>
